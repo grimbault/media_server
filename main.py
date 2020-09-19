@@ -5,18 +5,23 @@ import xml.etree.ElementTree as ET
 import subprocess
 import configparser
 
+# Country codes (for subtitles download)
+languages=['EN', 'FR']
+
 credentials = configparser.ConfigParser()
-config.read('credentials.ini')
+credentials.read('credentials.ini')
 
 IP = subprocess.check_output(["hostname -I | cut -d' ' -f1"], shell=True)
         .split()[0]
         .decode('ascii')
 
 os.system('''sed -i 's/${OWNIP}/%s/g' config/bazarr/config/config.ini'''%IP)
-os.system('''sed -i 's/${opensubtitles_username}/%s/g' config/bazarr/config/config.ini'''
-                        %credentials["OPENSUBTITLES"]['Username'])
-os.system('''sed -i 's/${opensubtitles_password}/%s/g' config/bazarr/config/config.ini'''
-                        %credentials["OPENSUBTITLES"]['Password'])
+
+if credentials["OPENSUBTITLES"]:
+    os.system('''sed -i 's/${opensubtitles_username}/%s/g' config/bazarr/config/config.ini'''
+                            %credentials["OPENSUBTITLES"]['Username'])
+    os.system('''sed -i 's/${opensubtitles_password}/%s/g' config/bazarr/config/config.ini'''
+                            %credentials["OPENSUBTITLES"]['Password'])
 
 with open('config/jackett/Jackett/ServerConfig.json') as f:
     data = json.load(f)
@@ -36,43 +41,130 @@ for child in root:
         os.system('''sed -i 's/${sonarr_key}/%s/g' config/bazarr/config/config.ini'''
                                 %child.text)
 
-for i in ['sonarr', 'radarr']:
+for tool in ['sonarr', 'radarr']:
     conn = sqlite3.connect('config/%s/nzbdrone.db'%i)
 
     c = conn.cursor()
 
     # Adding the deluge client
-    c.execute('''CREATE TABLE IF NOT EXISTS "DownloadClients" ("Id"INTEGER NOT NULL,"Enable"INTEGER NOT NULL,"Name"TEXT NOT NULL,"Implementation"TEXT NOT NULL,"Settings"TEXT NOT NULL,"ConfigContract"TEXT NOT NULL,PRIMARY KEY("Id" AUTOINCREMENT));''')
+    c.execute('''CREATE TABLE IF NOT EXISTS "DownloadClients" (
+        "Id" INTEGER NOT NULL,
+        "Enable" INTEGER NOT NULL,
+        "Name" TEXT NOT NULL,
+        "Implementation" TEXT NOT NULL,
+        "Settings" TEXT NOT NULL,
+        "ConfigContract" TEXT NOT NULL,
+        PRIMARY KEY ("Id" AUTOINCREMENT));''')
+
     c.execute('''DELETE FROM "DownloadClients"''')
-    c.execute('''INSERT INTO "DownloadClients" VALUES (1,1,'deluge','Deluge','{  "host": "%s",  "port": 8112,  "password": "deluge",  "movieCategory": "%s",  "recentMoviePriority": 0,  "olderMoviePriority": 0,  "addPaused": false,  "useSsl": false}','DelugeSettings')''' % IP, i)
+    c.execute('''INSERT INTO "DownloadClients" VALUES (1,1,'deluge','Deluge',
+        '{  
+            "host": "%s",  
+            "port": 8112,  
+            "password": "deluge",  
+            "movieCategory": "%s",  
+            "recentMoviePriority": 0,  
+            "olderMoviePriority": 0,  
+            "addPaused": false,  
+            "useSsl": false
+        }','DelugeSettings')''' % IP, tool)
 
 
     # Additionals columns for radarr
     columns=''
-    if i=='radarr':
-        columns=''',NULL,'[  {    "format": 0,    "allowed": true  }]',0'''
+    if tool=='radarr':
+        columns=''', NULL, '[{ "format": 0, "allowed": true }]', 0'''
 
     # Adding/Modifying the profiles
     c.execute('''DELETE FROM "Profiles"''')
-    # EN
-    c.execute('''INSERT INTO "Profiles" VALUES (1,'Any EN',3,'[  {    "quality": 0,    "allowed": false  },  {    "quality": 1,    "allowed": false  },  {    "quality": 8,    "allowed": false  },  {    "quality": 2,    "allowed": false  },  {    "quality": 4,    "allowed": true  },  {    "quality": 9,    "allowed": true  },  {    "quality": 10,    "allowed": false  },  {    "quality": 5,    "allowed": true  },  {    "quality": 6,    "allowed": true  },  {    "quality": 3,    "allowed": true  },  {    "quality": 7,    "allowed": true  },  {    "quality": 16,    "allowed": false  },  {    "quality": 18,    "allowed": false  },  {    "quality": 19,    "allowed": false  }]',1 %s)'''%columns)
-    c.execute('''INSERT INTO "Profiles" VALUES (3,'720p EN',5,'[  {    "quality": 0,    "allowed": false  },  {    "quality": 1,    "allowed": false  },  {    "quality": 8,    "allowed": false  },  {    "quality": 2,    "allowed": false  },  {    "quality": 4,    "allowed": true  },  {    "quality": 9,    "allowed": false  },  {    "quality": 10,    "allowed": false  },  {    "quality": 5,    "allowed": true  },  {    "quality": 6,    "allowed": true  },  {    "quality": 3,    "allowed": false  },  {    "quality": 7,    "allowed": false  },  {    "quality": 16,    "allowed": false  },  {    "quality": 18,    "allowed": false  },  {    "quality": 19,    "allowed": false  }]',1 %s)'''%columns)
-    c.execute('''INSERT INTO "Profiles" VALUES (4,'1080p EN',3,'[  {    "quality": 0,    "allowed": false  },  {    "quality": 1,    "allowed": false  },  {    "quality": 8,    "allowed": false  },  {    "quality": 2,    "allowed": false  },  {    "quality": 4,    "allowed": false  },  {    "quality": 9,    "allowed": true  },  {    "quality": 10,    "allowed": false  },  {    "quality": 5,    "allowed": false  },  {    "quality": 6,    "allowed": false  },  {    "quality": 3,    "allowed": true  },  {    "quality": 7,    "allowed": true  },  {    "quality": 16,    "allowed": false  },  {    "quality": 18,    "allowed": false  },  {    "quality": 19,    "allowed": false  }]',1 %s)'''%columns)
-    c.execute('''INSERT INTO "Profiles" VALUES (5,'Ultra-HD EN',19,'[  {    "quality": 0,    "allowed": false  },  {    "quality": 1,    "allowed": false  },  {    "quality": 8,    "allowed": false  },  {    "quality": 2,    "allowed": false  },  {    "quality": 4,    "allowed": false  },  {    "quality": 9,    "allowed": false  },  {    "quality": 10,    "allowed": false  },  {    "quality": 5,    "allowed": false  },  {    "quality": 6,    "allowed": false  },  {    "quality": 3,    "allowed": false  },  {    "quality": 7,    "allowed": false  },  {    "quality": 16,    "allowed": true  },  {    "quality": 18,    "allowed": true  },  {    "quality": 19,    "allowed": true  }]',1 %s)'''%columns)
 
-    # FR
-    c.execute('''INSERT INTO "Profiles" VALUES (7,'Any FR',3,'[  {    "quality": 0,    "allowed": false  },  {    "quality": 1,    "allowed": false  },  {    "quality": 8,    "allowed": false  },  {    "quality": 2,    "allowed": false  },  {    "quality": 4,    "allowed": true  },  {    "quality": 9,    "allowed": true  },  {    "quality": 10,    "allowed": false  },  {    "quality": 5,    "allowed": true  },  {    "quality": 6,    "allowed": true  },  {    "quality": 3,    "allowed": true  },  {    "quality": 7,    "allowed": true  },  {    "quality": 16,    "allowed": false  },  {    "quality": 18,    "allowed": false  },  {    "quality": 19,    "allowed": false  }]',2 %s)'''%columns)
-    c.execute('''INSERT INTO "Profiles" VALUES (8,'720p FR',5,'[  {    "quality": 0,    "allowed": false  },  {    "quality": 1,    "allowed": false  },  {    "quality": 8,    "allowed": false  },  {    "quality": 2,    "allowed": false  },  {    "quality": 4,    "allowed": true  },  {    "quality": 9,    "allowed": false  },  {    "quality": 10,    "allowed": false  },  {    "quality": 5,    "allowed": true  },  {    "quality": 6,    "allowed": true  },  {    "quality": 3,    "allowed": false  },  {    "quality": 7,    "allowed": false  },  {    "quality": 16,    "allowed": false  },  {    "quality": 18,    "allowed": false  },  {    "quality": 19,    "allowed": false  }]',2 %s)'''%columns)
-    c.execute('''INSERT INTO "Profiles" VALUES (9,'1080p FR',3,'[  {    "quality": 0,    "allowed": false  },  {    "quality": 1,    "allowed": false  },  {    "quality": 8,    "allowed": false  },  {    "quality": 2,    "allowed": false  },  {    "quality": 4,    "allowed": false  },  {    "quality": 9,    "allowed": true  },  {    "quality": 10,    "allowed": false  },  {    "quality": 5,    "allowed": false  },  {    "quality": 6,    "allowed": false  },  {    "quality": 3,    "allowed": true  },  {    "quality": 7,    "allowed": true  },  {    "quality": 16,    "allowed": false  },  {    "quality": 18,    "allowed": false  },  {    "quality": 19,    "allowed": false  }]',2 %s)'''%columns)
-    c.execute('''INSERT INTO "Profiles" VALUES (10,'Ultra-HD FR',19,'[  {    "quality": 0,    "allowed": false  },  {    "quality": 1,    "allowed": false  },  {    "quality": 8,    "allowed": false  },  {    "quality": 2,    "allowed": false  },  {    "quality": 4,    "allowed": false  },  {    "quality": 9,    "allowed": false  },  {    "quality": 10,    "allowed": false  },  {    "quality": 5,    "allowed": false  },  {    "quality": 6,    "allowed": false  },  {    "quality": 3,    "allowed": false  },  {    "quality": 7,    "allowed": false  },  {    "quality": 16,    "allowed": true  },  {    "quality": 18,    "allowed": true  },  {    "quality": 19,    "allowed": true  }]',2 %s)'''%columns)
-
+    for index, language in enumerate(languages):
+        
+        c.execute('''INSERT INTO "Profiles" VALUES (%s,'Any %s',3,'[  
+            {    "quality": 0,    "allowed": false  },  
+            {    "quality": 1,    "allowed": false  },  
+            {    "quality": 8,    "allowed": false  },  
+            {    "quality": 2,    "allowed": false  },  
+            {    "quality": 4,    "allowed": true  },  
+            {    "quality": 9,    "allowed": true  },  
+            {    "quality": 10,    "allowed": false  },  
+            {    "quality": 5,    "allowed": true  },  
+            {    "quality": 6,    "allowed": true  },  
+            {    "quality": 3,    "allowed": true  },  
+            {    "quality": 7,    "allowed": true  },  
+            {    "quality": 16,    "allowed": false  },  
+            {    "quality": 18,    "allowed": false  }, 
+            {    "quality": 19,    "allowed": false  }
+            ]',%s %s)'''%((index-1)*4)+index, language, index, columns))
+        c.execute('''INSERT INTO "Profiles" VALUES (%s,'720p %s',5,'[  
+            {    "quality": 0,    "allowed": false  },  
+            {    "quality": 1,    "allowed": false  },  
+            {    "quality": 8,    "allowed": false  },  
+            {    "quality": 2,    "allowed": false  },  
+            {    "quality": 4,    "allowed": true  },  
+            {    "quality": 9,    "allowed": false  },  
+            {    "quality": 10,    "allowed": false  },  
+            {    "quality": 5,    "allowed": true  },  
+            {    "quality": 6,    "allowed": true  },  
+            {    "quality": 3,    "allowed": false  },  
+            {    "quality": 7,    "allowed": false  },  
+            {    "quality": 16,    "allowed": false  },  
+            {    "quality": 18,    "allowed": false  },  
+            {    "quality": 19,    "allowed": false  }
+            ]',%s %s)'''%((index-1)*4)+index+1, language, index, columns))
+        c.execute('''INSERT INTO "Profiles" VALUES (%s,'1080p %s',3,'[  
+            {    "quality": 0,    "allowed": false  },  
+            {    "quality": 1,    "allowed": false  },  
+            {    "quality": 8,    "allowed": false  },  
+            {    "quality": 2,    "allowed": false  },  
+            {    "quality": 4,    "allowed": false  }, 
+            {    "quality": 9,    "allowed": true  },  
+            {    "quality": 10,    "allowed": false  },  
+            {    "quality": 5,    "allowed": false  },  
+            {    "quality": 6,    "allowed": false  },  
+            {    "quality": 3,    "allowed": true  },  
+            {    "quality": 7,    "allowed": true  },  
+            {    "quality": 16,    "allowed": false  },  
+            {    "quality": 18,    "allowed": false  },  
+            {    "quality": 19,    "allowed": false  }
+            ]',%s %s)'''%((index-1)*4)+index+2, language, index, columns))
+        c.execute('''INSERT INTO "Profiles" VALUES (%s,'Ultra-HD %s',19,'[  
+            {    "quality": 0,    "allowed": false  }, 
+            {    "quality": 1,    "allowed": false  },  
+            {    "quality": 8,    "allowed": false  },  
+            {    "quality": 2,    "allowed": false  },  
+            {    "quality": 4,    "allowed": false  },  
+            {    "quality": 9,    "allowed": false  },  
+            {    "quality": 10,    "allowed": false  },  
+            {    "quality": 5,    "allowed": false  },  
+            {    "quality": 6,    "allowed": false  },  
+            {    "quality": 3,    "allowed": false  },  
+            {    "quality": 7,    "allowed": false  },  
+            {    "quality": 16,    "allowed": true  },  
+            {    "quality": 18,    "allowed": true  },  
+            {    "quality": 19,    "allowed": true  }
+            ]',%s %s)'''%((index-1)*4)+index+3, language, index, columns))
 
     # Specificities from radarr & sonarr
     columns=''
-    if i=='radarr':
-        columns=''',"requiredFlags": [],  "multiLanguages": [],  "categories": [    2000,    2010,    2020,    2030,    2035,    2040,    2045,    2050,    2060  ],  "animeCategories": [],  "removeYear": false,  "searchByTitle": false'''
+    if tool=='radarr':
+        columns=''',"requiredFlags": [],  "multiLanguages": [],  "categories": [    
+            2000,   
+            2010,   
+            2020,    
+            2030,    
+            2035,    
+            2040,   
+            2045,    
+            2050,    
+            2060  
+            ], "animeCategories": [], "removeYear": false, "searchByTitle": false'''
     else:
-        columns=''',"seedCriteria": {},  "apiPath": "/api",  "categories": [    5030,    5040, 5070  ],  "animeCategories": [5070]'''
+        columns=''',"seedCriteria": {},  "apiPath": "/api",  "categories": [
+            5030,    
+            5040, 
+            5070  
+            ], "animeCategories": [5070]'''
 
     indexers=[
         {
@@ -109,12 +201,20 @@ for i in ['sonarr', 'radarr']:
     c.execute('''DELETE FROM "Indexers"''')
     uKey=1
     for indexer in indexers:
-        c.execute('''INSERT INTO "Indexers" VALUES (%d,'%s','Torznab','{  "minimumSeeders": 1,  "baseUrl": "%s",  "apiKey": "%s" %s}','TorznabSettings',1,1)'''%(uKey, indexer["name"], indexer["url"], jackettAPI, columns) )
+        c.execute('''INSERT INTO "Indexers" VALUES (%d,'%s','Torznab','{  
+            "minimumSeeders": 1,  
+            "baseUrl": "%s",  
+            "apiKey": "%s" %s
+            }','TorznabSettings',1,1)'''%(uKey, 
+                                          indexer["name"], 
+                                          indexer["url"], 
+                                          jackettAPI, 
+                                          columns) )
         uKey+=1
     
     # Adding RootFolders
     columns=''
-    if i=='radarr':
+    if tool=='radarr':
         columns='''/movies/'''
     else:
         columns='''/tv/'''
