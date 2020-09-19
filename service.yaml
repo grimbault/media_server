@@ -1,0 +1,22 @@
+- hosts: pihole
+
+  become: yes
+  become_user: root
+  become_method: sudo
+
+  tasks:
+
+  - name: Copy file with owner and permissions
+    copy:
+      src: ./plex.service
+      dest: /etc/systemd/system/plex.service
+      owner: root
+      group: root
+      mode: '1755'
+
+  - name: Start service
+    service:
+      name: plex.service
+      state: started
+      enabled: yes
+    

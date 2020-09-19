@@ -1,0 +1,10 @@
+[Unit]
+Description=media-server pod
+
+[Service]
+Restart=always
+ExecStart=/usr/bin/podman pod start -a media-server
+ExecStop=/usr/bin/podman stop -t 2 media-server
+
+[Install]
+WantedBy=local.target

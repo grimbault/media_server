@@ -1,0 +1,63 @@
+- hosts: pihole
+
+  tasks:
+  - name: Create the main directory if it does not exist
+    file:
+      path: /opt/media-server
+      owner: pi
+      mode: 0755
+
+      state: directory
+    become: yes
+    become_user: root
+    become_method: sudo
+
+  - name: Copy files with owner and permissions
+    copy:
+      src: "{{ item.src }}"
+      dest: "{{ item.dest }}"
+      owner: pi
+      mode: 0755
+    with_items:
+      - { src: './docker-compose.yaml', dest: '/opt/media-server/docker-compose.yaml' }
+      - { src: './.env', dest: '/opt/media-server/.env' }
+      - { src: './main.py', dest: '/opt/media-server/main.py' }
+
+  - name: Creating subdirectories
+    file:
+      path: "{{ item }}"
+      owner: pi
+      mode: 0755
+      recurse: yes
+      state: directory
+    with_items:
+      - /opt/media-server/config/plex
+      - /opt/media-server/config/jellyfin
+      - /opt/media-server/config/qbittorrent
+      - /opt/media-server/config/deluge
+      - /opt/media-server/config/radarr
+      - /opt/media-server/config/sonarr
+      - /opt/media-server/config/bazarr
+      - /opt/media-server/config/jackett/Jackett
+      - /opt/media-server/config/vpn
+      - /opt/media-server/downloads/series
+      - /opt/media-server/downloads/movies
+      - /opt/media-server/downloads/sonarr
+      - /opt/media-server/downloads/radarr
+      - /opt/media-server/downloads/torrent-blackhole
+      
+
+  - name: Copy config files
+    copy:
+      src: "{{ item.src }}"
+      dest: "{{ item.dest }}"
+      owner: pi
+      mode: 0755
+    with_items:
+      - { src: './config/deluge/', dest: '/opt/media-server/config/deluge/' }
+      - { src: './config/jackett/Jackett/Indexers/', dest: '/opt/media-server/config/jackett/Jackett/Indexers/' }
+      - { src: './config/bazarr/config/', dest: '/opt/media-server/config/bazarr/config' }
+
+  # - name: Run the pod
+  #   command: podman-compose --file /opt/media-server/docker-compose.yaml up --detach
+      
