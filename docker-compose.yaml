@@ -25,6 +25,10 @@ services:
       - ${ROOT}/config/jellyfin:/config
       - ${ROOT}/downloads/series:/tv
       - ${ROOT}/downloads/movies:/movies
+      - /opt/vc/lib:/opt/vc/lib
+    devices:
+      - /dev/vchiq:/dev/vchiq
+      - /dev/vcsm:/dev/vcsm
     restart: "unless-stopped"
       
   sonarr:
@@ -44,8 +48,8 @@ services:
     restart: unless-stopped
     
   radarr:
-    image: linuxserver/radarr:${RADARR_VERSION}
     container_name: radarr
+    image: linuxserver/radarr:${RADARR_VERSION}
     environment: 
       - PUID=${PUID}
       - PGID=${PGID}
@@ -76,8 +80,8 @@ services:
     restart: unless-stopped
 
   jackett:
-    image: linuxserver/jackett:${JACKETT_VERSION}
     container_name: jackett
+    image: linuxserver/jackett:${JACKETT_VERSION}
     environment:
       - PUID=${PUID} # default user id, defined in .env
       - PGID=${PGID} # default group id, defined in .env
@@ -91,8 +95,8 @@ services:
     restart: unless-stopped
 
   deluge:
-    image: linuxserver/deluge:${DELUGE_VERSION}
     container_name: deluge
+    image: linuxserver/deluge:${DELUGE_VERSION}
     network_mode: host
     environment:
       - PUID=${PUID}
