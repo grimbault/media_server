@@ -22,6 +22,7 @@
       - { src: './docker-compose.yaml', dest: '/opt/media-server/docker-compose.yaml' }
       - { src: './.env', dest: '/opt/media-server/.env' }
       - { src: './main.py', dest: '/opt/media-server/main.py' }
+      - { src: './credentials.ini', dest: '/opt/media-server/credentials.ini' }
 
   - name: Creating subdirectories
     file:
@@ -40,11 +41,21 @@
       - /opt/media-server/config/bazarr
       - /opt/media-server/config/jackett/Jackett
       - /opt/media-server/config/vpn
+      - /opt/media-server/downloads/torrent-blackhole
+
+  - name: Series/movies
+    ignore_errors: yes
+    file:
+      path: "{{ item }}"
+      owner: pi
+      mode: 0755
+      recurse: yes
+      state: directory
+    with_items:
       - /opt/media-server/downloads/series
       - /opt/media-server/downloads/movies
       - /opt/media-server/downloads/sonarr
       - /opt/media-server/downloads/radarr
-      - /opt/media-server/downloads/torrent-blackhole
       
 
   - name: Copy config files

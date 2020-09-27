@@ -34,7 +34,7 @@ There is some configuration in the file .env like :
 
     * Radarr : [hub.docker.com/r/linuxserver/radarr](hub.docker.com/r/linuxserver/radarr)
     * Sonarr : [hub.docker.com/r/linuxserver/sonarr](hub.docker.com/r/linuxserver/sonarr)
-    * Bazarr : [hub.docker.com/r/linuxserver/bazarr/](hub.docker.com/r/linuxserver/bazarr/)
+    * Bazarr : [hub.docker.com/r/linuxserver/bazarr](hub.docker.com/r/linuxserver/bazarr)
     * Jackett : [hub.docker.com/r/linuxserver/jackett](hub.docker.com/r/linuxserver/jackett)
     * Deluge : [hub.docker.com/r/linuxserver/deluge](hub.docker.com/r/linuxserver/deluge)
     * Jellyfin : [hub.docker.com/r/jellyfin/jellyfin](hub.docker.com/r/jellyfin/jellyfin)
@@ -69,6 +69,14 @@ python3 main.py
 
 Then you have to go on the deluge interface the enable it. By default the password is 'deluge'.
 
+There are the ports for the web interfaces :
+
+- Radarr: 7878
+- Sonarr: 8989
+- Bazarr: 6767
+- Jackett : 9117
+- Deluge : 8112
+- Jellyfin : 8096
 
 TODO
 ===
