@@ -16,20 +16,20 @@ services:
   #     - ${ROOT}/downloads/movies:/movies
   #   restart: unless-stopped
 
-  jellyfin:
-    image: jellyfin/jellyfin:${JELLYFIN_VERSION}
-    container_name: jellyfin
-    user: ${PUID}:${PGID}
-    network_mode: "host"
-    volumes:
-      - ${ROOT}/config/jellyfin:/config
-      - ${ROOT}/downloads/series:/tv
-      - ${ROOT}/downloads/movies:/movies
-      - /opt/vc/lib:/opt/vc/lib
-    devices:
-      - /dev/vchiq:/dev/vchiq
-      - /dev/vcsm:/dev/vcsm
-    restart: "unless-stopped"
+  # jellyfin:
+  #   image: jellyfin/jellyfin:${JELLYFIN_VERSION}
+  #   container_name: jellyfin
+  #   user: ${PUID}:${PGID}
+  #   network_mode: "host"
+  #   volumes:
+  #     - ${ROOT}/config/jellyfin:/config
+  #     - ${ROOT}/downloads/series:/tv
+  #     - ${ROOT}/downloads/movies:/movies
+  #     - /opt/vc/lib:/opt/vc/lib
+  #   devices:
+  #     - /dev/vchiq:/dev/vchiq
+  #     - /dev/vcsm:/dev/vcsm
+  #   restart: "unless-stopped"
       
   sonarr:
     image: linuxserver/sonarr:${SONARR_VERSION}

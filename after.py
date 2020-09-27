@@ -1,6 +1,8 @@
 import os 
 import json
+import uuid
 import sqlite3
+import hashlib
 import xml.etree.ElementTree as ET
 import subprocess
 import configparser
@@ -9,7 +11,7 @@ import configparser
 # 0 - Unknow
 # 1 - English
 # 2 - French
-# 3 - spanish
+# 3 - Spanish
 # 4 - German
 # 5 - Italian
 # 6 - Danish
@@ -41,34 +43,28 @@ IP = (subprocess.check_output(["hostname -I | cut -d' ' -f1"], shell=True)
         .split()[0]
         .decode('ascii'))
 
-os.system('''sed -i 's/${OWNIP}/%s/g' config/bazarr/config/config.ini'''%IP)
-
-if credentials["OPENSUBTITLES"]:
-    os.system('''sed -i 's/${opensubtitles_username}/%s/g' config/bazarr/config/config.ini'''
-                            %credentials["OPENSUBTITLES"]['Username'])
-    os.system('''sed -i 's/${opensubtitles_password}/%s/g' config/bazarr/config/config.ini'''
-                            %credentials["OPENSUBTITLES"]['Password'])
-
 with open('config/jackett/Jackett/ServerConfig.json') as f:
     data = json.load(f)
 jackettAPI=data['APIKey']
 
-radarrAPI=''
-root = ET.parse('config/radarr/config.xml').getroot()
-for child in root:
-    if (child.tag=='ApiKey'):
-        os.system('''sed -i 's/${radarr_key}/%s/g' config/bazarr/config/config.ini'''
-                                %child.text)
+# User
+username = ''
+sha256_pass = ''
+uid = ''
+if credentials["INTERFACE"]:
+    username = credentials["INTERFACE"]['Username']
+    sha256_pass = hashlib.sha256(credentials["INTERFACE"]['Password'].encode()).hexdigest()
+    uid = str(uuid.uuid4())
 
-sonarrAPI=''
-root = ET.parse('config/sonarr/config.xml').getroot()
-for child in root:
-    if (child.tag=='ApiKey'):
-        os.system('''sed -i 's/${sonarr_key}/%s/g' config/bazarr/config/config.ini'''
-                                %child.text)
 
 for tool in ['sonarr', 'radarr']:
     conn = sqlite3.connect('config/%s/nzbdrone.db'%tool)
+
+    root = ET.parse('config/%s/config.xml'%tool).getroot()
+    for child in root:
+        if (child.tag=='ApiKey'):
+            os.system('''sed -i 's/${sonarr_key}/%s/g' config/bazarr/config/config.ini'''
+                                    %child.text)
 
     c = conn.cursor()
 
@@ -147,23 +143,54 @@ for tool in ['sonarr', 'radarr']:
             ]',%s %s)'''%(((index)*4)+index+1, language[0], language[1], columns))
         # 720p
         c.execute('''INSERT INTO "Profiles" VALUES (%s,'720p %s',5,'[ 
-            { "quality": 4,  "allowed": true },  
-            { "quality": 5,  "allowed": true },  
-            { "quality": 6,  "allowed": false }
+            { "quality": 0,  "allowed": false  },  
+            { "quality": 1,  "allowed": false  },  
+            { "quality": 2,  "allowed": false  },  
+            { "quality": 3,  "allowed": false  },  
+            { "quality": 4,  "allowed": true  },  
+            { "quality": 5,  "allowed": true  },  
+            { "quality": 6,  "allowed": false  },  
+            { "quality": 7,  "allowed": false  },  
+            { "quality": 8,  "allowed": false  },  
+            { "quality": 9,  "allowed": false  },  
+            { "quality": 10, "allowed": false  },  
+            { "quality": 16, "allowed": false  },  
+            { "quality": 18, "allowed": false  },  
+            { "quality": 19, "allowed": false  }
             ]',%s %s)'''%(((index)*4)+index+2, language[0], language[1], columns))
         # 1080p
         c.execute('''INSERT INTO "Profiles" VALUES (%s,'1080p %s',3,'[  
-            { "quality": 9,  "allowed": true },
-            { "quality": 3,  "allowed": true },  
-            { "quality": 7,  "allowed": false },
-            { "quality": 20,  "allowed": false }
+            { "quality": 0,  "allowed": false  },  
+            { "quality": 1,  "allowed": false  },  
+            { "quality": 2,  "allowed": false  },  
+            { "quality": 3,  "allowed": true  },  
+            { "quality": 4,  "allowed": false  },  
+            { "quality": 5,  "allowed": false  },  
+            { "quality": 6,  "allowed": false  },  
+            { "quality": 7,  "allowed": false  },  
+            { "quality": 8,  "allowed": false  },  
+            { "quality": 9,  "allowed": true  },  
+            { "quality": 10, "allowed": false  },  
+            { "quality": 16, "allowed": false  },  
+            { "quality": 18, "allowed": false  },  
+            { "quality": 19, "allowed": false  }
             ]',%s %s)'''%(((index)*4)+index+3, language[0], language[1], columns))
         # 2160p
         c.execute('''INSERT INTO "Profiles" VALUES (%s,'Ultra-HD %s',19,'[ 
+            { "quality": 0,  "allowed": false  },  
+            { "quality": 1,  "allowed": false  },  
+            { "quality": 2,  "allowed": false  },  
+            { "quality": 3,  "allowed": false  },  
+            { "quality": 4,  "allowed": false  },  
+            { "quality": 5,  "allowed": false  },  
+            { "quality": 6,  "allowed": false  },  
+            { "quality": 7,  "allowed": false  },  
+            { "quality": 8,  "allowed": false  },  
+            { "quality": 9,  "allowed": false  },  
+            { "quality": 10, "allowed": false  },  
             { "quality": 16, "allowed": true },  
             { "quality": 18, "allowed": true },  
-            { "quality": 19, "allowed": true },
-            { "quality": 21, "allowed": true }
+            { "quality": 19, "allowed": true }
             ]',%s %s)'''%(((index)*4)+index+4, language[0], language[1], columns))
 
     # Specificities from radarr & sonarr
@@ -242,6 +269,22 @@ for tool in ['sonarr', 'radarr']:
 
     c.execute('''DELETE FROM "RootFolders"''')
     c.execute('''INSERT INTO "RootFolders" VALUES (1,'%s')'''%columns)
+
+    # User
+    if username:
+        c.execute('''DELETE FROM "Users"''')
+        c.execute('''INSERT INTO "Users" VALUES (1,'%s', '%s', '%s')'''%(uid, 
+                                                                         username, 
+                                                                         sha256_pass))
+    
+        tree = ET.parse('config/%s/config.xml'%tool)
+        root = tree.getroot()
+        for child in root:
+            if (child.tag=='AuthenticationMethod'):
+                child.text = 'Basic'
+
+        tree.write('config/%s/config.xml'%tool)
+    
     
     conn.commit()
     conn.close()

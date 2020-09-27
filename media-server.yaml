@@ -21,7 +21,8 @@
     with_items:
       - { src: './docker-compose.yaml', dest: '/opt/media-server/docker-compose.yaml' }
       - { src: './.env', dest: '/opt/media-server/.env' }
-      - { src: './main.py', dest: '/opt/media-server/main.py' }
+      - { src: './before.py', dest: '/opt/media-server/before.py' }
+      - { src: './after.py', dest: '/opt/media-server/after.py' }
       - { src: './credentials.ini', dest: '/opt/media-server/credentials.ini' }
 
   - name: Creating subdirectories
@@ -41,7 +42,6 @@
       - /opt/media-server/config/bazarr
       - /opt/media-server/config/jackett/Jackett
       - /opt/media-server/config/vpn
-      - /opt/media-server/downloads/torrent-blackhole
 
   - name: Series/movies
     ignore_errors: yes
@@ -56,6 +56,7 @@
       - /opt/media-server/downloads/movies
       - /opt/media-server/downloads/sonarr
       - /opt/media-server/downloads/radarr
+      - /opt/media-server/downloads/torrent-blackhole
       
 
   - name: Copy config files
@@ -68,6 +69,9 @@
       - { src: './config/deluge/', dest: '/opt/media-server/config/deluge/' }
       - { src: './config/jackett/Jackett/Indexers/', dest: '/opt/media-server/config/jackett/Jackett/Indexers/' }
       - { src: './config/bazarr/config/', dest: '/opt/media-server/config/bazarr/config' }
+
+  - name: Run the before script
+    command: python3 /opt/media-server/before.py
 
   # - name: Run the pod
   #   command: podman-compose --file /opt/media-server/docker-compose.yaml up --detach
